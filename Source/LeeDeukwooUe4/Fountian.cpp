@@ -1,19 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "GameFramework/RotatingMovementComponent.h"
 #include "Fountian.h"
 
 // Sets default values
 AFountian::AFountian()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 
 	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BODY"));
 	Water = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WATER"));
 	Light = CreateDefaultSubobject<UPointLightComponent>(TEXT("LIGHT"));
 	Splash = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("SPLASH"));
+	RMovement = CreateDefaultSubobject<URotatingMovementComponent>(TEXT("RMOVEMENT"));
 
 	RootComponent = Body;
 	Water->SetupAttachment(Body);
@@ -47,8 +48,8 @@ AFountian::AFountian()
 	}
 
 
-
-
+	RotateSpeed = 30.0f;
+	RMovement->RotationRate = FRotator(0.0f, RotateSpeed, 0.0f);
 
 }
 
@@ -71,3 +72,14 @@ void AFountian::Tick(float DeltaTime)
 
 }
 
+void AFountian::EndPlay(const EEndPlayReason::Type EndPlayReson)
+{
+	Super::EndPlay(EndPlayReson);
+	ABLOG_S(Warning);
+}
+
+void AFountian::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	ABLOG_S(Warning);
+}

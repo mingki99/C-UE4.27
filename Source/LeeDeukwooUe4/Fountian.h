@@ -20,6 +20,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReson) override;
+	virtual void PostInitializeComponents() override;
 
 public:	
 	// Called every frame
@@ -39,5 +41,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = ID)
 	int32 ID;
+
+	UPROPERTY(VisibleAnyWhere)
+	class URotatingMovementComponent* RMovement;
+
+
+private:
+	UPROPERTY(EditAnywhere, Category = Stat, Meta = (AllowprivateAccss = ture))
+	float RotateSpeed;
 
 };
