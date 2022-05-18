@@ -3,6 +3,8 @@
 #pragma once
 
 #include "LeeDeukwooUe4.h"
+
+
 #include "GameFramework/Pawn.h"
 #include "ABPawn.generated.h"
 
@@ -27,5 +29,29 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void PostInitializeComponents() override;
+
 	virtual void PossessedBy(APlayerController* NewController);
+
+private:
+	void UpDown(float NewAxisValue);
+	void LeftRight(float NewAxisValue);
+	
+public:
+	UPROPERTY(VisibleAnywhere, Category = Colliosin)
+	class UCapsuleComponent* Capsule;
+
+	// UCLASS()
+	UPROPERTY(VisibleAnywhere, Category = Visual)
+	class USkeletalMeshComponent* Mesh;
+
+	UPROPERTY(VisibleAnywhere, Category = Movement)
+	class UFloatingPawnMovement* Movement;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+	class UCameraComponent* Camera;
+
+
 };
