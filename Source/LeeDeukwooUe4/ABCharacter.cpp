@@ -4,6 +4,7 @@
 //
 //#include "Camera/CameraComponent.h"
 #include "ABCharacter.h"
+#include "ABAnimInstance.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -38,6 +39,8 @@ AABCharacter::AABCharacter()
 	ArmLengthSpeed = 3.0f;
 	ArmRotatoinSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
+
+	IsAttacking = false;
 }
 
 // Called when the game starts or when spawned
@@ -82,7 +85,7 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this, &AABCharacter::ViewChange);
 	PlayerInputComponent->BindAction(TEXT("Jump"),EInputEvent::IE_Pressed, this, &ACharacter::Jump);
-
+	PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &AABCharacter::Attack);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AABCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
@@ -213,4 +216,35 @@ void AABCharacter::ViewChange()
 	default:
 		break;
 	}
+}
+
+void AABCharacter::Attack()
+{
+	// ABLOG_S(Warning);
+	if (IsAttacking) return;
+
+	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	if (nullptr == AnimInstance) return;
+
+	AnimInstance->PlayAttackMontage();
+
+	IsAttacking = true;
+
+}
+
+void AABCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	ABCHECK(nullptr != AnimInstance);
+
+	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+}
+
+void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	ABCHECK(IsAttacking);
+
+	IsAttacking = false;
 }
