@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-//#include "GameFramework/SpringArmComponent.h"
-//
-//#include "Camera/CameraComponent.h"
+
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
 
@@ -39,6 +37,8 @@ AABCharacter::AABCharacter()
 	ArmLengthSpeed = 3.0f;
 	ArmRotatoinSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
+
+
 
 	IsAttacking = false;
 }
@@ -198,8 +198,6 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 
 }
 
-
-
 void AABCharacter::ViewChange()
 {
 	switch (CurrentControlMode)
@@ -218,19 +216,6 @@ void AABCharacter::ViewChange()
 	}
 }
 
-void AABCharacter::Attack()
-{
-	// ABLOG_S(Warning);
-	if (IsAttacking) return;
-
-	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
-	if (nullptr == AnimInstance) return;
-
-	AnimInstance->PlayAttackMontage();
-
-	IsAttacking = true;
-
-}
 
 void AABCharacter::PostInitializeComponents()
 {
@@ -242,9 +227,22 @@ void AABCharacter::PostInitializeComponents()
 	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
 }
 
+void AABCharacter::Attack()
+{
+	ABLOG_S(Warning);
+	if (IsAttacking) return;
+
+	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	if (nullptr == AnimInstance) return;
+
+	AnimInstance->PlayAttackMontage();
+
+	IsAttacking = true;
+
+}
+
 void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	ABCHECK(IsAttacking);
-
 	IsAttacking = false;
 }

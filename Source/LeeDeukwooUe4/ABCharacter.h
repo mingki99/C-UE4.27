@@ -58,6 +58,8 @@ private:
 	void ViewChange();
 	void Attack();
 
+
+private:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
