@@ -29,5 +29,5 @@ private:
 	bool IsInAir;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
-	UAnimMontage* AttackMontge;
+	class UAnimMontage* AttackMontge;
 };

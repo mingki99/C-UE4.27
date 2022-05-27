@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-//#include "GameFramework/SpringArmComponent.h"
-//
-//#include "Camera/CameraComponent.h"
+
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
 
@@ -40,6 +38,8 @@ AABCharacter::AABCharacter()
 	ArmRotatoinSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
+
+
 	IsAttacking = false;
 }
 
@@ -47,6 +47,11 @@ AABCharacter::AABCharacter()
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	/*auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	ABCHECK(nullptr != AnimInstance);
+
+	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);*/
 	
 }
 
@@ -199,7 +204,6 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 }
 
 
-
 void AABCharacter::ViewChange()
 {
 	switch (CurrentControlMode)
@@ -218,33 +222,33 @@ void AABCharacter::ViewChange()
 	}
 }
 
+
+//void AABCharacter::PostInitializeComponents()
+//{
+//	Super::PostInitializeComponents();
+//
+//	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+//	ABCHECK(nullptr != AnimInstance);
+//
+//	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+//}
+
 void AABCharacter::Attack()
 {
-	// ABLOG_S(Warning);
-	if (IsAttacking) return;
+	ABLOG_S(Warning);
+	/*if (IsAttacking) return;
 
 	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
 	if (nullptr == AnimInstance) return;
 
 	AnimInstance->PlayAttackMontage();
 
-	IsAttacking = true;
+	IsAttacking = true;*/
 
 }
 
-void AABCharacter::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-
-	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
-	ABCHECK(nullptr != AnimInstance);
-
-	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
-}
-
-void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	ABCHECK(IsAttacking);
-
-	IsAttacking = false;
-}
+//void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+//{
+//	ABCHECK(IsAttacking);
+//	IsAttacking = false;
+//}
