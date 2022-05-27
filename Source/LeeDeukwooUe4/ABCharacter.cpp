@@ -1,14 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-//#include "GameFramework/SpringArmComponent.h"
-//
-//#include "Camera/CameraComponent.h"
+
 #include "ABCharacter.h"
+#include "ABAnimInstance.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
@@ -38,13 +37,22 @@ AABCharacter::AABCharacter()
 	ArmLengthSpeed = 3.0f;
 	ArmRotatoinSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
+
+
+
+	IsAttacking = false;
 }
 
 // Called when the game starts or when spawned
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	/*auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	ABCHECK(nullptr != AnimInstance);
+
+	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);*/
+
 }
 
 // Called every frame
@@ -64,7 +72,7 @@ void AABCharacter::Tick(float DeltaTime)
 	switch (CurrentControlMode)
 	{
 	case EControlMode::DIABLO:
-		
+
 		if (DirectionToMove.SizeSquared() > 0.0f)
 		{
 			GetController()->SetControlRotation(FRotationMatrix::MakeFromX(DirectionToMove).Rotator());
@@ -81,8 +89,8 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this, &AABCharacter::ViewChange);
-	PlayerInputComponent->BindAction(TEXT("Jump"),EInputEvent::IE_Pressed, this, &ACharacter::Jump);
-
+	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &AABCharacter::Attack);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AABCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
@@ -101,14 +109,14 @@ void AABCharacter::UpDown(float NewAxisValue)
 	switch (CurrentControlMode)
 	{
 	case EControlMode::GTA:
-		AddMovementInput(FRotationMatrix(FRotator(0.0f,GetControlRotation().Yaw, 0.0f)).GetUnitAxis(EAxis::X), NewAxisValue);
+		AddMovementInput(FRotationMatrix(FRotator(0.0f, GetControlRotation().Yaw, 0.0f)).GetUnitAxis(EAxis::X), NewAxisValue);
 		break;
 	case EControlMode::DIABLO:
 		DirectionToMove.X = NewAxisValue;
 		break;
 	}
-	
-	
+
+
 	// ABLOG(Warning, TEXT("%f"), NewAxisValue);
 }
 
@@ -196,7 +204,6 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 }
 
 
-
 void AABCharacter::ViewChange()
 {
 	switch (CurrentControlMode)
@@ -214,3 +221,34 @@ void AABCharacter::ViewChange()
 		break;
 	}
 }
+
+
+//void AABCharacter::PostInitializeComponents()
+//{
+//	Super::PostInitializeComponents();
+//
+//	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+//	ABCHECK(nullptr != AnimInstance);
+//
+//	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+//}
+
+void AABCharacter::Attack()
+{
+	ABLOG_S(Warning);
+	/*if (IsAttacking) return;
+
+	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	if (nullptr == AnimInstance) return;
+
+	AnimInstance->PlayAttackMontage();
+
+	IsAttacking = true;*/
+
+}
+
+//void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+//{
+//	ABCHECK(IsAttacking);
+//	IsAttacking = false;
+//}
