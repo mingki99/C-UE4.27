@@ -236,25 +236,50 @@ void AABCharacter::PostInitializeComponents()
 	ABCHECK(nullptr != ABAnim);
 
 	ABAnim->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+	// 다음 콤보 체크 되는동안 공격 허용 x 람다식으로 표현
+	ABAnim->OnNextAttackCheck.AddLambda([this]() -> void{
+		ABLOG(Warning, TEXT("OnNextAttackCheck"));
+		CanNextCombo = false;
+	
+		if (IsComboInputOn)
+		{
+			AttackStartComboState();
+			ABAnim->JumpToAttackMontageSection(CurrentCombo);
+		}
+	});
 }
 
 void AABCharacter::Attack()
 {
-	ABLOG_S(Warning);
-	if (IsAttacking) return;
+	// ABLOG_S(Warning);
+	if (IsAttacking)
+	{
+		ABCHECK(FMath::IsWithinInclusive<int32>(CurrentCombo, 1, MaxCombo));
+		if (CanNextCombo)
+		{
+			IsComboInputOn = true;
+		}
+	}
+	else
+	{
+		ABCHECK(CurrentCombo == 0);
+		AttackStartComboState();
+		ABAnim->PlayAttackMontage();
+		ABAnim->JumpToAttackMontageSection(CurrentCombo);
+		IsAttacking = true;
+	}
 
-	if (nullptr == ABAnim) return;
-
-	ABAnim->PlayAttackMontage();
-
-	IsAttacking = true;
-
+	// if (nullptr == ABAnim) return;
+	// ABAnim->PlayAttackMontage();
+	// IsAttacking = true;
 }
 
 void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	ABCHECK(IsAttacking);
+	ABCHECK(CurrentCombo > 0);
 	IsAttacking = false;
+	AttackEndComboState();
 }
 
 void AABCharacter::AttackStartComboState()
@@ -266,7 +291,7 @@ void AABCharacter::AttackStartComboState()
 	// 
 	ABCHECK(FMath::Clamp<int32>(CurrentCombo, 0, MaxCombo - 1));
 
-	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo));
+	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
 }
 
 void AABCharacter::AttackEndComboState()
@@ -275,3 +300,4 @@ void AABCharacter::AttackEndComboState()
 	CanNextCombo = false;
 	CurrentCombo = 0;
 }
+
