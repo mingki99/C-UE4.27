@@ -10,6 +10,7 @@ AABCharacter::AABCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// 컴포넌트 설정
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
 
@@ -20,6 +21,7 @@ AABCharacter::AABCharacter()
 	SpringArm->TargetArmLength = 400.0f;
 	SpringArm->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f));
 
+	// 캐릭터 skeletalmesh 설정
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_CHARM_RAM(TEXT("/Game/InfinityBladeWarriors/Character/CompleteCharacters/SK_CharM_Ram.SK_CharM_Ram"));
 	if (SK_CHARM_RAM.Succeeded())
 	{
@@ -33,14 +35,19 @@ AABCharacter::AABCharacter()
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 	}
 
-
+	// view change될 때 springarm의 부드러운 효과를 위한 셋팅
 	ArmLengthSpeed = 3.0f;
 	ArmRotatoinSpeed = 10.0f;
+	
+	// 점프 높이 설정
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
-
-
-
+	
+	// 공격중 check값 활성화
 	IsAttacking = false;
+
+	// 콤보 설정
+	MaxCombo = 4;
+	AttackEndComboState();
 }
 
 // Called when the game starts or when spawned
@@ -79,6 +86,7 @@ void AABCharacter::Tick(float DeltaTime)
 }
 
 // Called to bind functionality to input
+// 입력 받는 함수
 void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -99,6 +107,7 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	SetControlMode(EControlMode::DIABLO);
 }
 
+// Mode 별로 움직임 구성
 void AABCharacter::UpDown(float NewAxisValue)
 {
 	switch (CurrentControlMode)
@@ -151,6 +160,7 @@ void AABCharacter::Turn(float NewAxisValue)
 	// ABLOG(Warning, TEXT("%f"), NewAxisValue);
 }
 
+
 void AABCharacter::SetControlMode(EControlMode NewControlMode)
 {
 	CurrentControlMode = NewControlMode;
@@ -198,6 +208,7 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 
 }
 
+// 카메라 view 체인지
 void AABCharacter::ViewChange()
 {
 	switch (CurrentControlMode)
@@ -221,28 +232,72 @@ void AABCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
-	ABCHECK(nullptr != AnimInstance);
+	ABAnim = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
+	ABCHECK(nullptr != ABAnim);
 
-	AnimInstance->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+	ABAnim->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
+	// 다음 콤보 체크 되는동안 공격 허용 x 람다식으로 표현
+	ABAnim->OnNextAttackCheck.AddLambda([this]() -> void{
+		ABLOG(Warning, TEXT("OnNextAttackCheck"));
+		CanNextCombo = false;
+	
+		if (IsComboInputOn)
+		{
+			AttackStartComboState();
+			ABAnim->JumpToAttackMontageSection(CurrentCombo);
+		}
+	});
 }
 
 void AABCharacter::Attack()
 {
-	ABLOG_S(Warning);
-	if (IsAttacking) return;
+	// ABLOG_S(Warning);
+	if (IsAttacking)
+	{
+		ABCHECK(FMath::IsWithinInclusive<int32>(CurrentCombo, 1, MaxCombo));
+		if (CanNextCombo)
+		{
+			IsComboInputOn = true;
+		}
+	}
+	else
+	{
+		ABCHECK(CurrentCombo == 0);
+		AttackStartComboState();
+		ABAnim->PlayAttackMontage();
+		ABAnim->JumpToAttackMontageSection(CurrentCombo);
+		IsAttacking = true;
+	}
 
-	auto AnimInstance = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
-	if (nullptr == AnimInstance) return;
-
-	AnimInstance->PlayAttackMontage();
-
-	IsAttacking = true;
-
+	// if (nullptr == ABAnim) return;
+	// ABAnim->PlayAttackMontage();
+	// IsAttacking = true;
 }
 
 void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	ABCHECK(IsAttacking);
+	ABCHECK(CurrentCombo > 0);
 	IsAttacking = false;
+	AttackEndComboState();
 }
+
+void AABCharacter::AttackStartComboState()
+{
+	// 다음 콤보 이동 가능여부
+	CanNextCombo = true;
+	// 콤보 입력 여부
+	IsComboInputOn = false;
+	// 
+	ABCHECK(FMath::Clamp<int32>(CurrentCombo, 0, MaxCombo - 1));
+
+	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
+}
+
+void AABCharacter::AttackEndComboState()
+{
+	IsComboInputOn = false;
+	CanNextCombo = false;
+	CurrentCombo = 0;
+}
+

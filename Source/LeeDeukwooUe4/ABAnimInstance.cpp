@@ -42,3 +42,28 @@ void UABAnimInstance::PlayAttackMontage()
 
 	Montage_Play(AttackMontge, 1.0f);
 }
+
+void UABAnimInstance::JumpToAttackMontageSection(int32 NewSection)
+{
+	ABCHECK(Montage_IsPlaying(AttackMontge));
+	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontge);
+}
+
+// 모든 함수를 호출하는 멀티캐스트 델리게이트 broadcast
+//  Attack Anim Notify
+void UABAnimInstance::AnimNotify_AttackHitCheck()
+{
+	// ABLOG_S(Warning);
+	OnAttackHitCheck.Broadcast();
+}
+
+void UABAnimInstance::AnimNotify_NextAttackCheck()
+{
+	OnNextAttackCheck.Broadcast();
+}
+
+FName UABAnimInstance::GetAttackMontageSectionName(int32 Section)
+{
+	ABCHECK(FMath::IsWithinInclusive<int32>(Section, 1, 4), NAME_None);
+	return FName(*FString::Printf(TEXT("Attack%d"), Section));
+}
