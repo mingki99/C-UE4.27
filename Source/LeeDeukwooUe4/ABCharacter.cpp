@@ -3,6 +3,7 @@
 
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -47,7 +48,15 @@ AABCharacter::AABCharacter()
 
 	// 콤보 설정
 	MaxCombo = 4;
+	// comnostate Set 해주기
 	AttackEndComboState();
+
+	// 새로 만든 콜리전을 character의 콜리전 기본값으로 설정
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
+
+	// 디버그 드로잉 설정
+	AttackRange = 200.0f;
+	AttackRadius = 50.0f;
 }
 
 // Called when the game starts or when spawned
@@ -62,8 +71,10 @@ void AABCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// SpringArm 길이 체크
 	SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, ArmLengthTo, DeltaTime, ArmLengthSpeed);
 
+	// Mode체크
 	switch (CurrentControlMode)
 	{
 	case EControlMode::DIABLO:
@@ -234,9 +245,11 @@ void AABCharacter::PostInitializeComponents()
 
 	ABAnim = Cast<UABAnimInstance>(GetMesh()->GetAnimInstance());
 	ABCHECK(nullptr != ABAnim);
-
+	
+	// OnMontageEnded 델리게이트와 내가 만든 함수 연결.
 	ABAnim->OnMontageEnded.AddDynamic(this, &AABCharacter::OnAttackMontageEnded);
-	// 다음 콤보 체크 되는동안 공격 허용 x 람다식으로 표현
+
+	// 멀티케스트 델리게이트인 OnNextAttackCheck를 람다식으로 표현
 	ABAnim->OnNextAttackCheck.AddLambda([this]() -> void{
 		ABLOG(Warning, TEXT("OnNextAttackCheck"));
 		CanNextCombo = false;
@@ -247,13 +260,17 @@ void AABCharacter::PostInitializeComponents()
 			ABAnim->JumpToAttackMontageSection(CurrentCombo);
 		}
 	});
+
+	// Notify를 활용하여 애니매이션 타이밍에 AttackCheck함수 발동.
+	ABAnim->OnAttackHitCheck.AddUObject(this, &AABCharacter::AttackCheck);
 }
 
 void AABCharacter::Attack()
 {
 	// ABLOG_S(Warning);
 	if (IsAttacking)
-	{
+	{	
+		// 런타임에 문제 발생시 붉은색 에러로그를 뿌리는 함수 ABCHEECK
 		ABCHECK(FMath::IsWithinInclusive<int32>(CurrentCombo, 1, MaxCombo));
 		if (CanNextCombo)
 		{
@@ -289,15 +306,96 @@ void AABCharacter::AttackStartComboState()
 	// 콤보 입력 여부
 	IsComboInputOn = false;
 	// 
-	ABCHECK(FMath::Clamp<int32>(CurrentCombo, 0, MaxCombo - 1));
+	ABCHECK(FMath::IsWithinInclusive<int32>(CurrentCombo, 0, MaxCombo - 1));
 
 	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
 }
 
 void AABCharacter::AttackEndComboState()
 {
+	
 	IsComboInputOn = false;
 	CanNextCombo = false;
 	CurrentCombo = 0;
 }
 
+void AABCharacter::AttackCheck()
+{
+	FHitResult HitResult;
+	FCollisionQueryParams Params(NAME_None, false, this);
+	bool bResult = GetWorld()->SweepSingleByChannel(
+		HitResult,
+		// 엑터의 위치부터
+		GetActorLocation(),
+		// 액터의 Forward x축 에서 200cm 까지 Check
+		GetActorLocation() + GetActorForwardVector() * 200.0f,
+		// 도형의 회전 rotation
+		FQuat::Identity,
+		// trace채널 설정
+		ECollisionChannel::ECC_GameTraceChannel2,
+		// 50cm의 반지름을 가진 구체
+		FCollisionShape::MakeSphere(50.0f),
+		// 탐색방법 설정을 모아둔 구조체
+		Params);
+	
+	// 디버그 드로잉 선언, 구현
+	#if ENABLE_DRAW_DEBUG
+
+		// Trace의 총길이
+		FVector TraceVec = GetActorForwardVector() * AttackRange;
+		// 캡슐이 생성될 센터와 위치 vector
+		FVector Center = GetActorLocation() + TraceVec * 0.5f;
+		// 센터부터 circle의 지름
+		float HalfHeight = AttackRange * 0.5f + AttackRadius;
+		// TraceVec를 기준으로 생성되어 z축을 향해 뻗쳐나간다.
+		FQuat CapsulRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
+		// 히트 처리 true 왼: 그린, false 오: Red
+		FColor DrawColor = bResult ? FColor::Green : FColor::Red;
+		// 드로잉이 보여질 시간.
+		float DebugLifeTime = 5.0f;
+
+		// 캡슐형 디버그 드로잉 설정
+		DrawDebugCapsule(GetWorld(),
+		Center,
+		HalfHeight,
+		AttackRadius,
+		CapsulRot,
+		DrawColor,
+		false,
+		DebugLifeTime);
+
+	#endif
+
+
+
+	// 가비지 컬렉션 때문에 약포인터로 지정된 엑터의 접근하려면 IsValid 함수를 사용해아한다.
+	if (bResult)
+	{
+		if (HitResult.Actor.IsValid())
+		{
+			// Actor의 이름
+			ABLOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.Actor->GetName());
+			// Damage를 입히는 처리
+			FDamageEvent DamageEvent;
+			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+
+		}
+	}
+
+
+}
+
+float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
+
+	if (FinalDamage > 0.0f)
+	{
+		ABAnim->SetDeadAnim();
+		SetActorEnableCollision(false);
+	}
+
+	return FinalDamage;
+}

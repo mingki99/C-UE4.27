@@ -6,7 +6,7 @@
 #include "Animation/AnimInstance.h"
 #include "ABAnimInstance.generated.h"
 
-// 여러개의 함수가 등록되도록 선언
+// ABCharacter에 전달할 델리게이트를 선언.
 DECLARE_MULTICAST_DELEGATE(FOnNextAttackCheckDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnAttackHitCheckDelegate);
 
@@ -27,8 +27,10 @@ public:
 	void JumpToAttackMontageSection(int32 NewSection);
 
 public:
+	// delegete 선언
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
 	FOnAttackHitCheckDelegate OnAttackHitCheck;
+	void SetDeadAnim() { IsDead = true; }
 
 
 private:
@@ -47,6 +49,11 @@ private:
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Pawn, Meta = (AllowPrivateAccess = true))
 	bool IsInAir;
 
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Pawn, Meta = (AllowPrivateAccess = true))
+	bool IsDead;
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	class UAnimMontage* AttackMontge;
+
+
 };
