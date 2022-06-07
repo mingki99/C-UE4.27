@@ -5,6 +5,9 @@
 #include "ABAnimInstance.h"
 #include "DrawDebugHelpers.h"
 
+// ABWeapon 액터를 사용하기에 해더추가
+#include "ABWeapon.h"
+
 // Sets default values
 AABCharacter::AABCharacter()
 {
@@ -57,13 +60,36 @@ AABCharacter::AABCharacter()
 	// 디버그 드로잉 설정
 	AttackRange = 200.0f;
 	AttackRadius = 50.0f;
+
+	// 스켈레탈 소켓 무기 부착하기
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (GetMesh()->DoesSocketExist(WeaponSocket))
+	{
+		Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WEAPON"));
+		static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_WEAPON(TEXT("/Game/InfinityBladeWeapons/Weapons/Blade/Swords/Blade_BlackKnight/SK_Blade_BlackKnight.SK_Blade_BlackKnight"));
+			if (SK_WEAPON.Succeeded())
+			{
+				Weapon->SetSkeletalMesh(SK_WEAPON.Object);
+			}
+		// 소켓과 웨폰을 붙인다.
+		Weapon->SetupAttachment(GetMesh(), WeaponSocket);
+	}
+
 }
 
 // Called when the game starts or when spawned
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 게임 시작시 ABWepon Actor 소켓에 부착
+	FName WeponSocket(TEXT("hand_rSocket"));
+	auto CurWeapon = GetWorld()->SpawnActor<AABWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (nullptr != CurWeapon)
+	{
+		CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeponSocket);
+
+	}
 }
 
 // Called every frame

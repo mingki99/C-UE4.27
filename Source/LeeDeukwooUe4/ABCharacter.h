@@ -46,6 +46,9 @@ public:
 
 
 public:
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+	class USkeletalMeshComponent* Weapon;
+
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* SpringArm;
 
