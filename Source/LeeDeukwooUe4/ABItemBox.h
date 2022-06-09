@@ -32,6 +32,10 @@ public:
 	UPROPERTY(VisibleAnyWhere, Category = Box)
 	class UStaticMeshComponent* Box; 
 
+
+	UPROPERTY(EditInstanceOnly, Category = Box)
+	TSubclassOf<class AABWeapon> WeaponItemClass;
+
 private:
 	UFUNCTION()
 	void OnCharacterOverlap(UPrimitiveComponent* OverlappedComponent,
