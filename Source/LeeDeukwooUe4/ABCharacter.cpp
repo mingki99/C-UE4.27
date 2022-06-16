@@ -3,6 +3,7 @@
 
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
+#include "ABCharacterComponent.h"
 #include "DrawDebugHelpers.h"
 
 // ABWeapon 액터를 사용하기에 해더추가
@@ -17,6 +18,7 @@ AABCharacter::AABCharacter()
 	// 컴포넌트 설정
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
+	CharacterStat = CreateDefaultSubobject<UABCharacterComponent>(TEXT("CHARACTERSTAT"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -91,6 +93,28 @@ void AABCharacter::BeginPlay()
 
 	}
 }
+
+// 무기 장착 확인
+bool AABCharacter::CanSetWeapon()
+{
+	return(nullptr == CurrentWeapon);
+}
+
+// 무기 장착 함수
+void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
+{
+	ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon)
+	FName WeaponSoket(TEXT("hand_rSocket"));
+	if (nullptr != NewWeapon)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSoket);
+		NewWeapon->SetOwner(this);
+
+		CurrentWeapon = NewWeapon;
+	}
+
+}
+
 
 // Called every frame
 void AABCharacter::Tick(float DeltaTime)
@@ -289,6 +313,15 @@ void AABCharacter::PostInitializeComponents()
 
 	// Notify를 활용하여 애니매이션 타이밍에 AttackCheck함수 발동.
 	ABAnim->OnAttackHitCheck.AddUObject(this, &AABCharacter::AttackCheck);
+
+	// 멀티케스트 델리게이트인 OnHPIsZero 람다식으로 표현
+	CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+
+		ABLOG(Warning, TEXT("OnHPIsZero"));
+		ABAnim->SetDeadAnim();
+		SetActorEnableCollision(false);
+
+	});
 }
 
 void AABCharacter::Attack()
@@ -403,7 +436,7 @@ void AABCharacter::AttackCheck()
 			ABLOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.Actor->GetName());
 			// Damage를 입히는 처리
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(CharacterStat->GetAttack() , DamageEvent, GetController(), this);
 
 		}
 	}
@@ -417,11 +450,17 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 
 	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
 
-	if (FinalDamage > 0.0f)
-	{
-		ABAnim->SetDeadAnim();
-		SetActorEnableCollision(false);
-	}
+	CharacterStat->SetDamage(FinalDamage);
+
+	//if (FinalDamage > 0.0f)
+	//{
+	//	ABAnim->SetDeadAnim();
+	//	SetActorEnableCollision(false);
+	//}
 
 	return FinalDamage;
 }
+
+
+
+

@@ -3,6 +3,7 @@
 
 #include "ABItemBox.h"
 #include "ABWeapon.h"
+#include "ABCharacter.h"
 
 // Sets default values
 AABItemBox::AABItemBox()
@@ -13,10 +14,13 @@ AABItemBox::AABItemBox()
 	// 컴포넌트 이름 설정
 	Trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("TRIGGER"));
 	Box = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BOX"));
+	Effect = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("EFFECT"));
 
 	// 최상위 컴포넌트 설정, Box 루트 컴포넌트에 Attach
 	RootComponent = Trigger;
 	Box->SetupAttachment(RootComponent);
+	Effect->SetupAttachment(RootComponent);
+
 
 	// BoxCollision 크기 셋팅
 	Trigger->SetBoxExtent(FVector(40.0f, 42.0f, 30.0f));
@@ -27,6 +31,15 @@ AABItemBox::AABItemBox()
 	}
 	// BoxComponent 콜리전과 위치 맞추기
 	Box->SetRelativeLocation(FVector(0.0f, 0.3f, -30.0f));
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> P_CHESTOPEN (TEXT("/Game/InfinityBladeGrassLands/Effects/FX_Treasure/Chest/P_TreasureChest_Open_Mesh.P_TreasureChest_Open_Mesh"));
+	if (P_CHESTOPEN.Succeeded())
+	{
+		Effect->SetTemplate(P_CHESTOPEN.Object);
+		// 처음부터 바로 시작되는 bool = false
+		Effect->bAutoActivate = false;
+	}
+
 
 	//  만들었던 콜리전으로 Set
 	Trigger->SetCollisionProfileName(TEXT("ItemBox"));
@@ -52,6 +65,32 @@ void AABItemBox::PostInitializeComponents()
 void AABItemBox::OnCharacterOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ABLOG_S(Warning);
+
+	auto ABCharacter = Cast<AABCharacter>(OtherActor);
+	ABCHECK(nullptr != ABCharacter);
+
+	if (nullptr != ABCharacter && nullptr != WeaponItemClass)
+	{
+		if (ABCharacter->CanSetWeapon())
+		{
+			// 새 무기 생성하여 무기 장착
+			auto NewWeapon = GetWorld()->SpawnActor<AABWeapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
+			ABCharacter->SetWeapon(NewWeapon);
+			Effect->Activate(true);
+			Box->SetHiddenInGame(true, true);
+			SetActorEnableCollision(false);
+			// 함수 바인딩
+			Effect->OnSystemFinished.AddDynamic(this, &AABItemBox::OnEffectFinished);
+
+
+
+		}
+		else
+		{
+			ABLOG(Warning, TEXT("%s can't equip weapon currently."), *ABCharacter->GetName());
+		}
+	}
+
 }
 
 
@@ -62,3 +101,7 @@ void AABItemBox::Tick(float DeltaTime)
 
 }
 
+void AABItemBox::OnEffectFinished(UParticleSystemComponent* PSystem)
+{
+	Destroy();
+}
