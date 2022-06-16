@@ -44,8 +44,15 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	bool CanSetWeapon();
+	void SetWeapon(class AABWeapon* NewWeapon);
 
-public:
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+	class AABWeapon* CurrentWeapon;
+
+	UPROPERTY(VisibleAnywhere, Category = Stat)
+	class UABCharacterComponent* CharacterStat;
+
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 	class USkeletalMeshComponent* Weapon;
 
