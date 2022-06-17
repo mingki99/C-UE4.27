@@ -8,6 +8,9 @@
 
 // ABWeapon 액터를 사용하기에 해더추가
 #include "ABWeapon.h"
+#include "Components/WidgetComponent.h"
+#include "ABCharacterWidget.h"
+
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -19,9 +22,12 @@ AABCharacter::AABCharacter()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
 	CharacterStat = CreateDefaultSubobject<UABCharacterComponent>(TEXT("CHARACTERSTAT"));
+	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
+
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
+	HPBarWidget->SetupAttachment(GetMesh());
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 	SpringArm->TargetArmLength = 400.0f;
@@ -40,6 +46,18 @@ AABCharacter::AABCharacter()
 	{
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 	}
+
+	HPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
+	// 위젯 붙어질 위치 Screen으로 지정
+	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	if (UI_HUD.Succeeded())
+	{
+		HPBarWidget->SetWidgetClass(UI_HUD.Class);
+		// 위젯 크기 설정
+		HPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
+	}
+
 
 	// view change될 때 springarm의 부드러운 효과를 위한 셋팅
 	ArmLengthSpeed = 3.0f;
@@ -92,6 +110,16 @@ void AABCharacter::BeginPlay()
 		CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeponSocket);
 
 	}
+
+	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	if (nullptr != CharacterWidget)
+	{
+		// 스텟 연결
+		CharacterWidget->BindCharacterStat(CharacterStat);
+	}
+
+
+
 }
 
 // 무기 장착 확인
@@ -322,6 +350,14 @@ void AABCharacter::PostInitializeComponents()
 		SetActorEnableCollision(false);
 
 	});
+
+	//auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget-> GetUserWidgetObject());
+	//if (nullptr != CharacterWidget)
+	//{
+	//	// 스텟 연결
+	//	CharacterWidget->BindCharacterStat(CharacterStat);
+	//}
+
 }
 
 void AABCharacter::Attack()
