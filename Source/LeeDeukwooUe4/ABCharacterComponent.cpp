@@ -31,9 +31,9 @@ void UABCharacterComponent::SetNewLevel(int32 NewLevel)
 	CurrentStatData = ABGameInstance->GetABCharacterData(NewLevel);
 	if (nullptr != CurrentStatData)
 	{
-		// 레벨 바뀔시 스탯 변겨
+		// 레벨 바뀔시 스탯 변경
 		Level = NewLevel;
-		CurrentHP = CurrentStatData->MaxHP;
+		SetHP(CurrentStatData->MaxHP);
 	}
 	else
 	{
@@ -50,10 +50,17 @@ void UABCharacterComponent::BeginPlay()
 void UABCharacterComponent::SetDamage(float NewDamege)
 {
 	ABCHECK(nullptr != CurrentStatData);
-	// 0 ~ MaxHP 로 범위 설정
-	CurrentHP = FMath::Clamp<float>(CurrentHP - NewDamege, 0.0f, CurrentStatData->MaxHP);
-	if (CurrentHP <= 0.0f)
+	// HP 범위 0 ~ MaxHP 로 설정
+	SetHP(FMath::Clamp<float>(CurrentHP - NewDamege, 0.0f, CurrentStatData->MaxHP));
+}
+
+void UABCharacterComponent::SetHP(float NewHP)
+{
+	CurrentHP = NewHP;
+	OnHPChanged.Broadcast();
+	if (CurrentHP < KINDA_SMALL_NUMBER)
 	{
+		CurrentHP = 0.0f;
 		OnHPIsZero.Broadcast();
 	}
 }
@@ -62,4 +69,11 @@ float UABCharacterComponent::GetAttack()
 {
 	ABCHECK(nullptr != CurrentStatData, 0.0f);
 	return CurrentStatData->Attack;
+}
+
+float UABCharacterComponent::GetHPRatio()
+{
+	ABCHECK(nullptr != CurrentStatData, 0.0f);
+
+	return (CurrentStatData->MaxHP < KINDA_SMALL_NUMBER) ? 0.0f : (CurrentHP / CurrentStatData->MaxHP);
 }
