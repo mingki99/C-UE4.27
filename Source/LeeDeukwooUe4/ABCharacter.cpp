@@ -10,7 +10,7 @@
 #include "ABWeapon.h"
 #include "Components/WidgetComponent.h"
 #include "ABCharacterWidget.h"
-
+#include "ABAIController.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -94,6 +94,11 @@ AABCharacter::AABCharacter()
 		// 소켓과 웨폰을 붙인다.
 		Weapon->SetupAttachment(GetMesh(), WeaponSocket);
 	}
+
+	// AIController 속성 지정
+	AIControllerClass = AABAIController::StaticClass();
+	// AI 생성 옵션
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 }
 
