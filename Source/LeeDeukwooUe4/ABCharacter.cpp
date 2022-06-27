@@ -261,7 +261,7 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 
 	switch (CurrentControlMode)
 	{
-	case AABCharacter::EControlMode::GTA:
+	case EControlMode::GTA:
 		/*SpringArm->TargetArmLength = 450.0f;
 		SpringArm->SetRelativeRotation(FRotator::ZeroRotator);*/
 
@@ -278,7 +278,7 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 		GetCharacterMovement()->bUseControllerDesiredRotation = false;
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 		break;
-	case AABCharacter::EControlMode::DIABLO:
+	case EControlMode::DIABLO:
 		/*SpringArm->TargetArmLength = 800.0f;
 		SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));*/
 
@@ -296,6 +296,17 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 		GetCharacterMovement()->bUseControllerDesiredRotation = true;
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 		break;
+
+	case EControlMode::NPC:
+		bUseControllerRotationYaw = false;
+		// 무드러운 모션 끔.
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		// 캐릭터 회전(돌아보는지) 유무
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		// 돌아볼때 걸리는 시간
+		GetCharacterMovement()->RotationRate = FRotator(0.0f, 480.0f, 0.0f);
+		break;
+
 	default:
 		break;
 	}
@@ -503,5 +514,20 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 }
 
 
+void AABCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
 
+	// 플레이어가 아니라면 NPC컨트롤 모드로 전환
+	if (IsPlayerControlled())
+	{
+		SetControlMode(EControlMode::DIABLO);
+		GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+	}
+	else
+	{
+		SetControlMode(EControlMode::NPC);
+		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+	}
+}
 

@@ -23,7 +23,8 @@ public:
 
 	// 절대 이름이 변하지 않는다는 가정하여 static 선언.
 	static const FName HomePosKey;
-	static const FName PatorlPosKey;
+	static const FName PatrolPosKey;
+	static const FName TargetKey;
 
 private:
 	//void OnRepeatTimer();
