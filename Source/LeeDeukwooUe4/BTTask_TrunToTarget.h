@@ -4,26 +4,17 @@
 
 #include "LeeDeukwooUe4.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "BTTask_Attack.generated.h"
+#include "BTTask_TrunToTarget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class LEEDEUKWOOUE4_API UBTTask_Attack : public UBTTaskNode
+class LEEDEUKWOOUE4_API UBTTask_TrunToTarget : public UBTTaskNode
 {
 	GENERATED_BODY()
 	
 public:
-	UBTTask_Attack();
-
+	UBTTask_TrunToTarget();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-
-protected:
-	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-
-private:
-	bool IsAttacking = false;
-
-
 };
