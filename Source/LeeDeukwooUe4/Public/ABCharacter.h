@@ -36,6 +36,7 @@ protected:
 	float ArmLengthSpeed = 0.0f;
 	float ArmRotatoinSpeed = 0.0f;
 
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -82,6 +83,7 @@ private:
 	
 	void AttackCheck();
 
+	void OnAssetLoadCompleted();
 
 private:
 	UFUNCTION()
@@ -114,6 +116,9 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	float AttackRadius;
+
+	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
+	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
 
 
 };
