@@ -1,7 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "GameFramework/RotatingMovementComponent.h"
 #include "Fountian.h"
+#include "GameFramework/RotatingMovementComponent.h"
+
 
 // Sets default values
 AFountian::AFountian()

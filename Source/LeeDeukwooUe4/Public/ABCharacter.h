@@ -5,6 +5,8 @@
 #include "GameFramework/Character.h"
 #include "ABCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
+
 UCLASS()
 class LEEDEUKWOOUE4_API AABCharacter : public ACharacter
 {
@@ -33,6 +35,7 @@ protected:
 	FRotator ArmRotationTo = FRotator::ZeroRotator;
 	float ArmLengthSpeed = 0.0f;
 	float ArmRotatoinSpeed = 0.0f;
+
 
 public:	
 	// Called every frame
@@ -67,6 +70,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = UI)
 	class UWidgetComponent* HPBarWidget;
 
+	void Attack();
+	FOnAttackEndDelegate OnAttackEnd;
+
 private:
 	void UpDown(float NewAxisValue);
 	void LeftRight(float NewAxisValue);
@@ -74,9 +80,10 @@ private:
 	void Turn(float NewAxisValue);
 
 	void ViewChange();
-	void Attack();
+	
 	void AttackCheck();
 
+	void OnAssetLoadCompleted();
 
 private:
 	UFUNCTION()
@@ -109,6 +116,9 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	float AttackRadius;
+
+	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
+	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
 
 
 };

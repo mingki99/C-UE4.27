@@ -9,6 +9,8 @@ public class LeeDeukwooUe4EditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.Add("LeeDeukwooUe4");
+		ExtraModuleNames.AddRange(new string[] { "LeeDeukwooUe4", "ArenaBattleSetting" });
+		// ExtraModuleNames.Add("LeeDeukwooUe4");
+		// ExtraModuleNames.Add("ArenaBattleSetting");
 	}
 }

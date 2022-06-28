@@ -1,12 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.#include "GameFramework/FlotingPawnMovement.h"
 
+#include "ABPawn.h"
 //#include "Components/SkeletalMeshComponent.h"
 //#include "Components/CapsuleComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 //#include "GameFramework/SpringArmComponent.h"
 //#include "Camera/CameraComponent.h"
 
-#include "ABPawn.h"
+
 
 
 // Sets default values

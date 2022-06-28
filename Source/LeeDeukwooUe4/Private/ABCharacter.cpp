@@ -12,6 +12,9 @@
 #include "ABCharacterWidget.h"
 #include "ABAIController.h"
 
+#include"ABCharacterSetting.h"
+#include "ABGameInstance.h"
+
 // Sets default values
 AABCharacter::AABCharacter()
 {
@@ -100,12 +103,41 @@ AABCharacter::AABCharacter()
 	// AI 생성 옵션
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
+
+	//auto DefaultSetting = GetDefault<UABCharacterSetting>();
+	//if (DefaultSetting->CharacterAssets.Num() > 0)
+	//{
+	//	for (auto CharacterAsset : DefaultSetting->CharacterAssets)
+	//	{
+	//		ABLOG(Warning, TEXT("Character Asset : %s"), *CharacterAsset.ToString());
+	//	}
+	//}
+
 }
 
 // Called when the game starts or when spawned
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!IsPlayerControlled())
+	{
+		auto DefaultSetting = GetDefault<UABCharacterSetting>();
+		// 랜덤으로 하나 가져오기 (왜 -1을 해주었을까? Null때문에?)
+		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() -1);
+		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
+
+		auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
+		if (nullptr != ABGameInstance)
+		{
+			AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
+
+		}
+
+
+	}
+
+
 
 	// 게임 시작시 ABWepon Actor 소켓에 부착
 	FName WeponSocket(TEXT("hand_rSocket"));
@@ -408,6 +440,8 @@ void AABCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted
 	ABCHECK(CurrentCombo > 0);
 	IsAttacking = false;
 	AttackEndComboState();
+
+	OnAttackEnd.Broadcast();
 }
 
 void AABCharacter::AttackStartComboState()
@@ -530,4 +564,15 @@ void AABCharacter::PossessedBy(AController* NewController)
 		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
 	}
 }
+
+void AABCharacter::OnAssetLoadCompleted()
+{
+	USkeletalMesh* AssetLoaded = Cast<USkeletalMesh>(AssetStreamingHandle->GetLoadedAsset());
+	AssetStreamingHandle.Reset();
+	if (nullptr != AssetLoaded)
+	{
+		GetMesh()->SetSkeletalMesh(AssetLoaded);
+	}
+}
+
 

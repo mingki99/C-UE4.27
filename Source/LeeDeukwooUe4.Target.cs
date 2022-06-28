@@ -9,6 +9,8 @@ public class LeeDeukwooUe4Target : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
+		// ExtraModuleNames.AddRange(new string[] { "LeeDeukwooUe4", "ArenaBattleSetting" });
 		ExtraModuleNames.Add("LeeDeukwooUe4");
+		ExtraModuleNames.Add("ArenaBattleSetting");
 	}
 }

@@ -9,5 +9,7 @@ public class LeeDeukwooUe4 : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "UMG", "NavigationSystem", "AIModule", "GamePlayTasks" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "ArenaBattleSetting" });
+		
 	}
 }
