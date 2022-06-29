@@ -2,8 +2,7 @@
 
 #pragma once
 
-// #include "LeeDeukwooUe4.h"
-#include "CoreMinimal.h"
+#include "LeeDeukwooUe4.h"
 #include "GameFramework/Actor.h"
 #include "ABSection.generated.h"
 
@@ -25,7 +24,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	/*UPROPERTY(VisibleAnywhere, Category = Mesh, Meta = (AllowPrivateAccess = true))
-	class UStaticMeshComponent* Mesh;*/
+	UPROPERTY(VisibleAnywhere, Category = Mesh, Meta = (AllowPrivateAccess = true))
+	TArray<UStaticMeshComponent*> GateMesh;
+
+	UPROPERTY(VisibleAnywhere, Category = Mesh, Meta = (AllowPrivateAccess = true))
+	class UStaticMeshComponent* Mesh;
 
 };
