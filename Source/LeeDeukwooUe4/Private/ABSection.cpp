@@ -66,9 +66,8 @@ AABSection::AABSection()
 	}
 
 
+
 	bNoBattle = false;
-
-
 
 }
 
