@@ -2,6 +2,7 @@
 
 #pragma once
 
+
 #include "LeeDeukwooUe4.h"
 #include "GameFramework/Actor.h"
 #include "ABSection.generated.h"
@@ -34,6 +35,11 @@ private:
 
 	void OperateGates(bool bOpen = true);
 
+	UFUNCTION()
+		void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
 	// Called every frame

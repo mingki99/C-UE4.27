@@ -11,6 +11,8 @@ AABSection::AABSection()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MESH"));
 	RootComponent = Mesh;
 
+	
+
 	// Square 메쉬 변수에 저장.
 	FString AssetPath = TEXT("/Game/Book/StaticMesh/SM_SQUARE.SM_SQUARE");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SM_SQUARE(*AssetPath);
@@ -30,6 +32,9 @@ AABSection::AABSection()
 	Trigger->SetRelativeLocation(FVector(0.0f, 0.0f, 250.0f));
 	// 만들어준 콜리전으로 ABCharacter콜리전만 겹치는 콜리전 지정
 	Trigger->SetCollisionProfileName(TEXT("ABTrigger"));
+
+	// 
+	Trigger->OnComponentBeginOverlap.AddDynamic(this, &AABSection::OnTriggerBeginOverlap);
 
 	// Gate메쉬 변수에 저장.
 	FString GateMeshPath = TEXT("/Game/Book/StaticMesh/SM_GATE.SM_GATE");
@@ -62,13 +67,13 @@ AABSection::AABSection()
 		// 만들어준 콜리전으로 ABCharacter콜리전만 겹치는 콜리전 지정
 		NewGateTrigger->SetCollisionProfileName(TEXT("ABTrigger"));
 		GateTriggers.Add(NewGateTrigger);
+
+		NewGateTrigger->OnComponentBeginOverlap.AddDynamic(this, &AABSection::OnGateTriggerBeginOverlap);
+		NewGateTrigger->ComponentTags.Add(GateSocket);
+
 	}
 
-
 	bNoBattle = false;
-
-
-
 }
 
 // Called when the game starts or when spawned
@@ -88,7 +93,7 @@ void AABSection::SetState(ESectionState NewState)
 		Trigger->SetCollisionProfileName(TEXT("ABTrigger"));
 		for (UBoxComponent* GateTrigger : GateTriggers)
 		{
-			GateTrigger->SetCollisionProfileName(TEXT("NoCollsion"));
+			GateTrigger->SetCollisionProfileName(TEXT("NoCollision"));
 		}
 
 		OperateGates(true);
@@ -97,10 +102,10 @@ void AABSection::SetState(ESectionState NewState)
 
 	case ESectionState::BATTLE:
 	{
-		Trigger->SetCollisionProfileName(TEXT("NoCollsion"));
+		Trigger->SetCollisionProfileName(TEXT("NoCollision"));
 		for (UBoxComponent* GateTrigger : GateTriggers)
 		{
-			GateTrigger->SetCollisionProfileName(TEXT("NoCollsion"));
+			GateTrigger->SetCollisionProfileName(TEXT("NoCollision"));
 		}
 
 		OperateGates(false);
@@ -109,7 +114,7 @@ void AABSection::SetState(ESectionState NewState)
 
 	case ESectionState::COMPLETE:
 	{
-		Trigger->SetCollisionProfileName(TEXT("NoCollsion"));
+		Trigger->SetCollisionProfileName(TEXT("NoCollision"));
 		for (UBoxComponent* GateTrigger : GateTriggers)
 		{
 			GateTrigger->SetCollisionProfileName(TEXT("ABTrigger"));
@@ -140,6 +145,60 @@ void AABSection::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 	SetState(bNoBattle ? ESectionState::COMPLETE : ESectionState::READY);
 }
+
+void AABSection::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (CurrentState == ESectionState::READY)
+	{
+		SetState(ESectionState::BATTLE);
+	}
+
+}
+
+
+void AABSection::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ABCHECK(OverlappedComp->ComponentTags.Num() == 1);
+	FName ComponentTag = OverlappedComp->ComponentTags[0];
+	FName SocketName = FName(*ComponentTag.ToString().Left(2));
+	if (!Mesh->DoesSocketExist(SocketName))
+			return;
+
+	FVector NewLocation = Mesh->GetSocketLocation(SocketName);
+
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams CollisionQueryParam(NAME_None, false, this);
+	FCollisionObjectQueryParams ObjectQueryParam(FCollisionObjectQueryParams::InitType::AllObjects);
+
+	bool bResult = GetWorld()->OverlapMultiByObjectType(
+		OverlapResults,
+		NewLocation,
+		FQuat::Identity,
+		ObjectQueryParam,
+		FCollisionShape::MakeSphere(775.0f),
+		CollisionQueryParam
+	);
+
+	if (!bResult)
+	{
+		// 스택 오버 플로우가 일어난다 왜 일어날 까?
+		auto NewSection = GetWorld()->SpawnActor<AABSection>(NewLocation, FRotator::ZeroRotator);
+	}
+	else
+	{
+		ABLOG(Warning, TEXT("New section area is not empty"));
+	}
+
+
+
+
+
+}
+
+
+
+
+
 
 
 // Called every frame
