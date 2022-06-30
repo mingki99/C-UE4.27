@@ -65,8 +65,12 @@ AABSection::AABSection()
 		GateTriggers.Add(NewGateTrigger);
 	}
 
+<<<<<<< remotes/origin/Dask_top
 
 	bNoBattle = false;
+=======
+	
+>>>>>>> local
 }
 
 // Called when the game starts or when spawned
