@@ -35,11 +35,14 @@ private:
 
 	void OperateGates(bool bOpen = true);
 
+	// 오버랩 버전 2개 생성.
 	UFUNCTION()
 		void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
 		void OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	void OnNPCSpawn();
 
 public:
 	// Called every frame
@@ -62,6 +65,15 @@ private:
 	// 전투 없이 다음 섹션으로 통과 할 수 있는 bool형
 	UPROPERTY(EditAnywhere, Category = State, Meta = (AllowPrivateAccess = true))
 		bool bNoBattle;
+
+	UPROPERTY(EditAnywhere, Category = Spawn, Meta = (AllowPrivateAccess = true))
+	float EnemySpawnTime;
+
+	UPROPERTY(EditAnywhere, Category = Spawn, Meta = (AllowPrivateAccess = true))
+		float ItemBoxSpawnTime;
+
+	FTimerHandle SpawnNPCTimerHadle = {};
+	FTimerHandle SpawnItemBoxTimerHandle = {};
 
 
 };
