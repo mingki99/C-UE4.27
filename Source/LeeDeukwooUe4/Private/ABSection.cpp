@@ -6,7 +6,7 @@
 // Sets default values
 AABSection::AABSection()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MESH"));
@@ -67,16 +67,18 @@ AABSection::AABSection()
 
 
 	bNoBattle = false;
+
+
+
 }
 
 // Called when the game starts or when spawned
 void AABSection::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	SetState(bNoBattle ? ESectionState::COMPLETE : ESectionState::READY);
 }
-
 
 void AABSection::SetState(ESectionState NewState)
 {

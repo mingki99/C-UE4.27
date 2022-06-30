@@ -10,11 +10,12 @@ UCLASS()
 class LEEDEUKWOOUE4_API AABSection : public AActor
 {
 	GENERATED_BODY()
-
-public:
+	
+public:	
 	// Sets default values for this actor's properties
 	AABSection();
-	virtual void OnConstruction(const FTransform& Transform) override ;
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -34,8 +35,7 @@ private:
 	void OperateGates(bool bOpen = true);
 
 
-
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -44,18 +44,17 @@ private:
 		TArray<UStaticMeshComponent*> GateMeshes;
 
 	UPROPERTY(VisibleAnywhere, Category = Trigger, Meta = (AllowPrivateAccess = true))
-	TArray<UBoxComponent*> GateTriggers;
+		TArray<UBoxComponent*> GateTriggers;
 
 
 	UPROPERTY(VisibleAnywhere, Category = Mesh, Meta = (AllowPrivateAccess = true))
 		class UStaticMeshComponent* Mesh;
 
 	UPROPERTY(VisibleAnywhere, Category = Trigger, Meta = (AllowPrivateAccess = true))
-	class UBoxComponent* Trigger;
+		class UBoxComponent* Trigger;
 
 	// 전투 없이 다음 섹션으로 통과 할 수 있는 bool형
 	UPROPERTY(EditAnywhere, Category = State, Meta = (AllowPrivateAccess = true))
-	bool bNoBattle;
-
+		bool bNoBattle;
 
 };
