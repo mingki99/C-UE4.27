@@ -44,7 +44,7 @@ AABSection::AABSection()
 
 	}
 
-	d
+	
 }
 
 // Called when the game starts or when spawned
