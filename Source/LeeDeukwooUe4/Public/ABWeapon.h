@@ -15,6 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	AABWeapon();
 
+	float GetAttackRange() const;
+	float GetAttackDamage() const;
+	float GetAttackModifier() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -27,4 +31,25 @@ public:
 	UPROPERTY(VisibleAnyWhere, Category = Weapon)
 	class USkeletalMeshComponent* Weapon;
 
+protected:
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackRange;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackDamageMin;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackDamageMax;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackModifierMin;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackModifierMax;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackDamage;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Attack)
+	float AttackModifier;
 };

@@ -37,7 +37,12 @@ AABAIController::AABAIController()
 
 void AABAIController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
+	Super::OnPossess(InPawn);	
+}
+
+
+void AABAIController::RunAI()
+{
 	//// 3초마다 함수를 발생 시키고 Set 시켜주는 Timer를 사용한다.
 	//GetWorld()->GetTimerManager().SetTimer(RepeatTimerHanle, this, &AABAIController::OnRepeatTimer, RepeatInterval, true);
 
@@ -45,11 +50,21 @@ void AABAIController::OnPossess(APawn* InPawn)
 	if (UseBlackboard(BBAsset, Blackboard))
 	{
 		// 현재의 위치를 HomePosKey에 Set해준다.
-		Blackboard->SetValueAsVector(HomePosKey, InPawn->GetActorLocation());
+		Blackboard->SetValueAsVector(HomePosKey, GetPawn()->GetActorLocation());
 		if (!RunBehaviorTree(BTAsset))
 		{
 			ABLOG(Error, TEXT("AIController couldn't run behavior tree!"));
 		}
+	}
+
+}
+
+void AABAIController::StopAI()
+{
+	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
+	if (nullptr != BehaviorTreeComponent)
+	{
+		BehaviorTreeComponent->StopTree(EBTStopMode::Safe);
 	}
 }
 

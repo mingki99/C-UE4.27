@@ -16,5 +16,17 @@ class LEEDEUKWOOUE4_API AABGameMode : public AGameModeBase
 	
 public:
 	AABGameMode();
+
+	virtual void PostInitializeComponents() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	void AddScore(class AABPlayerController* ScoredPlayer);
+	int32 GetScore() const;
+
+
+private:
+	UPROPERTY()
+	class AABGameState* ABGameState;
+
+	UPROPERTY()
+	int32 ScoreToClear;
 };

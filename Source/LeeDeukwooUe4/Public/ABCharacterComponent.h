@@ -28,8 +28,9 @@ public:
 	void SetNewLevel(int32 NewLevel);
 	void SetDamage(float NewDamage);
 	void SetHP(float NewHP);
-	float GetAttack();
-	float GetHPRatio();
+	float GetAttack() const;
+	float GetHPRatio() const;
+	int32 GetDropExp() const;
 
 
 	FOnHPIsZeroDelegate OnHPIsZero;

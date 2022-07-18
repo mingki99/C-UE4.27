@@ -14,6 +14,12 @@
 
 #include"ABCharacterSetting.h"
 #include "ABGameInstance.h"
+#include "ABPlayerController.h"
+#include "ABPlayerState.h"
+#include "ABHUDWidget.h"
+#include "ABGameMode.h"
+
+
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -81,7 +87,7 @@ AABCharacter::AABCharacter()
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
 
 	// 디버그 드로잉 설정
-	AttackRange = 200.0f;
+	AttackRange = 80.0f;
 	AttackRadius = 50.0f;
 
 	// 스켈레탈 소켓 무기 부착하기
@@ -113,29 +119,69 @@ AABCharacter::AABCharacter()
 	//	}
 	//}
 
+	
+	AssetIndex = 4;
+
+	SetActorHiddenInGame(true);
+	HPBarWidget->SetHiddenInGame(true);
+	SetCanBeDamaged(false);
+	// bCanBeDamaged = false
+
+	DeadTimer = 5.0f;
 }
 
 // Called when the game starts or when spawned
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (!IsPlayerControlled())
+	
+	// 플레이어인지 AI인지 BeginPlay에서 확인
+	bIsPlayer = IsPlayerControlled();
+	if (bIsPlayer)
 	{
-		auto DefaultSetting = GetDefault<UABCharacterSetting>();
-		// 랜덤으로 하나 가져오기 (왜 -1을 해주었을까? Null때문에?)
-		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() -1);
-		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
-
-		auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
-		if (nullptr != ABGameInstance)
-		{
-			AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
-
-		}
-
-
+		// Player는 PlayerController컨트롤러 배정
+		ABPlayerController = Cast<AABPlayerController>(GetController());
+		ABCHECK(nullptr != ABPlayerController);
 	}
+	else
+	{
+		// AI는 AIController 배정
+		ABAIController = Cast<AABAIController>(GetController());
+		ABCHECK(nullptr != ABAIController);
+	}
+
+	auto DefaultSetting = GetDefault<UABCharacterSetting>();
+
+	if (bIsPlayer)
+	{
+		auto ABPlayerState = Cast<AABPlayerState>(GetPlayerState());
+		ABCHECK(nullptr != ABPlayerState);
+		AssetIndex = ABPlayerState->GetCharacterIndex();
+	}
+	else
+	{
+		// AI는 랜덤한 Mesh를 가진다.
+		AssetIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+	}
+
+	CharacterAssetToLoad = DefaultSetting->CharacterAssets[AssetIndex];
+	auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
+	AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
+	SetCharacterState(ECharacterState::LOADING);
+
+	//if (!IsPlayerControlled())
+	//{
+	//	auto DefaultSetting = GetDefault<UABCharacterSetting>();
+	//	// 랜덤으로 하나 가져오기 (왜 -1을 해주었을까? Null때문에?)
+	//	int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() -1);
+	//	CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
+
+	//	auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
+	//	if (nullptr != ABGameInstance)
+	//	{
+	//		AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
+	//	}
+	//}
 
 
 
@@ -159,16 +205,29 @@ void AABCharacter::BeginPlay()
 
 }
 
+float AABCharacter::GetFinalAttackRange() const
+{
+	return (nullptr != CurrentWeapon) ? CurrentWeapon->GetAttackRange() : AttackRange;
+}
+
 // 무기 장착 확인
 bool AABCharacter::CanSetWeapon()
 {
-	return(nullptr == CurrentWeapon);
+	return true;
 }
 
 // 무기 장착 함수
 void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
 {
-	ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon)
+	ABCHECK(nullptr != NewWeapon);
+
+	if (nullptr != CurrentWeapon)
+	{
+		CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
+
 	FName WeaponSoket(TEXT("hand_rSocket"));
 	if (nullptr != NewWeapon)
 	{
@@ -286,7 +345,6 @@ void AABCharacter::Turn(float NewAxisValue)
 	// ABLOG(Warning, TEXT("%f"), NewAxisValue);
 }
 
-
 void AABCharacter::SetControlMode(EControlMode NewControlMode)
 {
 	CurrentControlMode = NewControlMode;
@@ -363,7 +421,6 @@ void AABCharacter::ViewChange()
 		break;
 	}
 }
-
 
 void AABCharacter::PostInitializeComponents()
 {
@@ -466,14 +523,16 @@ void AABCharacter::AttackEndComboState()
 
 void AABCharacter::AttackCheck()
 {
+	float FinalAttackRange = GetFinalAttackRange();
+
 	FHitResult HitResult;
 	FCollisionQueryParams Params(NAME_None, false, this);
 	bool bResult = GetWorld()->SweepSingleByChannel(
 		HitResult,
 		// 엑터의 위치부터
 		GetActorLocation(),
-		// 액터의 Forward x축 에서 200cm 까지 Check
-		GetActorLocation() + GetActorForwardVector() * 200.0f,
+		// 액터의 Forward x축 에서 FinalAttackRange 까지 Check
+		GetActorLocation() + GetActorForwardVector() * FinalAttackRange,
 		// 도형의 회전 rotation
 		FQuat::Identity,
 		// trace채널 설정
@@ -487,11 +546,11 @@ void AABCharacter::AttackCheck()
 	#if ENABLE_DRAW_DEBUG
 
 		// Trace의 총길이
-		FVector TraceVec = GetActorForwardVector() * AttackRange;
+		FVector TraceVec = GetActorForwardVector() * FinalAttackRange;
 		// 캡슐이 생성될 센터와 위치 vector
 		FVector Center = GetActorLocation() + TraceVec * 0.5f;
 		// 센터부터 circle의 지름
-		float HalfHeight = AttackRange * 0.5f + AttackRadius;
+		float HalfHeight = FinalAttackRange * 0.5f + AttackRadius;
 		// TraceVec를 기준으로 생성되어 z축을 향해 뻗쳐나간다.
 		FQuat CapsulRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
 		// 히트 처리 true 왼: 그린, false 오: Red
@@ -522,7 +581,7 @@ void AABCharacter::AttackCheck()
 			ABLOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.Actor->GetName());
 			// Damage를 입히는 처리
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(CharacterStat->GetAttack() , DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(GetFinalAttackDamage(), DamageEvent, GetController(), this);
 
 		}
 	}
@@ -538,6 +597,17 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 
 	CharacterStat->SetDamage(FinalDamage);
 
+	if (CurrentState == ECharacterState::DEAD)
+	{
+		if (EventInstigator->IsPlayerController())
+		{
+			// 가해자 인자 전달
+			ABPlayerController = Cast<AABPlayerController>(EventInstigator);
+			// 죽이는 자가 플레이어이면 Ture
+			ABCHECK(nullptr != ABPlayerController, 0.0f);
+			ABPlayerController->NPCKill(this);
+		}
+	}
 	//if (FinalDamage > 0.0f)
 	//{
 	//	ABAnim->SetDeadAnim();
@@ -547,32 +617,169 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	return FinalDamage;
 }
 
-
 void AABCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
 	// 플레이어가 아니라면 NPC컨트롤 모드로 전환
-	if (IsPlayerControlled())
-	{
-		SetControlMode(EControlMode::DIABLO);
-		GetCharacterMovement()->MaxWalkSpeed = 600.0f;
-	}
-	else
-	{
-		SetControlMode(EControlMode::NPC);
-		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
-	}
+	//if (IsPlayerControlled())
+	//{
+	//	SetControlMode(EControlMode::DIABLO);
+	//	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+	//}
+	//else
+	//{
+	//	SetControlMode(EControlMode::NPC);
+	//	GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+	//}
 }
 
 void AABCharacter::OnAssetLoadCompleted()
 {
 	USkeletalMesh* AssetLoaded = Cast<USkeletalMesh>(AssetStreamingHandle->GetLoadedAsset());
 	AssetStreamingHandle.Reset();
-	if (nullptr != AssetLoaded)
+	ABCHECK(nullptr != AssetLoaded);
+	GetMesh()->SetSkeletalMesh(AssetLoaded);
+
+	SetCharacterState(ECharacterState::READY);
+
+	/*if (nullptr != AssetLoaded)
 	{
 		GetMesh()->SetSkeletalMesh(AssetLoaded);
+	}*/
+}
+
+void AABCharacter::SetCharacterState(ECharacterState NewState)
+{
+	ABCHECK(CurrentState != NewState);
+	CurrentState = NewState;
+
+	switch (CurrentState)
+	{
+	case ECharacterState::LOADING:
+	{
+		if (bIsPlayer)
+		{
+			DisableInput(ABPlayerController);
+
+			// HUD에 캐릭터의 stat 넘겨주기.
+			ABPlayerController->GetHUDWidget()->BindCharacterStat(CharacterStat);
+
+			auto ABPlayerState = Cast<AABPlayerState>(GetPlayerState());
+			ABCHECK(nullptr != ABPlayerState);
+			CharacterStat->SetNewLevel(ABPlayerState->GetCharacterLevel());
+
+		}
+		else
+		{
+			// NPC
+			auto ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+			ABCHECK(nullptr != ABGameMode);
+			// Score를 곱하여 점점 레벨이 올라간다.
+			int32 TargetLevel = FMath::CeilToInt(((float)ABGameMode->GetScore() * 0.8f));
+			int32 FinalLevel = FMath::Clamp<int32>(TargetLevel, 1, 20);
+			ABLOG(Warning, TEXT("New NPC Level : %d"), FinalLevel);
+			CharacterStat->SetNewLevel(FinalLevel);
+		}
+
+		SetActorHiddenInGame(true);
+		HPBarWidget->SetHiddenInGame(true);
+		SetCanBeDamaged(false);
+		break;
+	}
+
+	case ECharacterState::PREINIT:
+		break;
+	
+	case ECharacterState::READY:
+	{
+		SetActorHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(false);
+		SetCanBeDamaged(true);
+
+		// OnHPIsZero델리게이트에 SetCharacterState(ECharacterState::DEAD) 연결
+		CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+			
+			SetCharacterState(ECharacterState::DEAD);
+		});
+
+		if (bIsPlayer)
+		{
+			SetControlMode(EControlMode::DIABLO);
+			GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+			EnableInput(ABPlayerController);
+		}
+		else
+		{
+			SetControlMode(EControlMode::NPC);
+			GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+			ABAIController->RunAI();
+		}
+
+		break;
+		
+	}
+	case ECharacterState::DEAD:
+	{
+		
+		SetActorEnableCollision(false);
+		GetMesh()->SetHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(true);
+		ABAnim->SetDeadAnim();
+		SetCanBeDamaged(false);
+
+		if (bIsPlayer)
+		{
+			// 즉을시 움직임 멈추기.
+			DisableInput(ABPlayerController);
+		}
+		else
+		{
+			// AI죽을 시 Tree멈춤.
+			ABAIController->StopAI();
+		}
+		
+		
+		GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, FTimerDelegate::CreateLambda([this]() -> void{
+		
+			if (bIsPlayer)
+			{
+				// Settimer로 5초후에 ShowResultUI
+				ABPlayerController->ShowResultUI();
+			}
+			else
+			{
+				// Settimer로 5초후에 파괴된다.
+				Destroy();
+			}
+		
+		}), DeadTimer, false);
+
+		break;
+	}
 	}
 }
+
+ECharacterState AABCharacter::GetCharacter() const
+{
+	return CurrentState;
+}
+
+int32 AABCharacter::GetExp() const
+{
+	return CharacterStat->GetDropExp();
+}
+
+float AABCharacter::GetFinalAttackDamage() const
+{
+	float AttackDamage = (nullptr != CurrentWeapon) ? 
+	(CharacterStat->GetAttack() + CurrentWeapon->GetAttackDamage()) : CharacterStat->GetAttack();
+
+	float AttackModifier = (nullptr != CurrentWeapon) ? CurrentWeapon->GetAttackModifier() : 1.0f;
+	
+	return AttackDamage * AttackModifier;
+}
+
+
 
 
