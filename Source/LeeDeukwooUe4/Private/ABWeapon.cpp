@@ -20,6 +20,22 @@ AABWeapon::AABWeapon()
 
 	Weapon->SetCollisionProfileName(TEXT("NoCollision"));
 
+	AttackRange = 150.0f;
+	AttackDamageMin = -2.5f;
+	AttackDamageMax = 10.0f;
+	AttackModifierMin = 0.85f;
+	AttackModifierMax = 1.25f;
+
+}
+
+float AABWeapon::GetAttackDamage() const
+{
+	return AttackDamage;
+}
+
+float AABWeapon::GetAttackModifier() const
+{
+	return AttackModifier;
 }
 
 // Called when the game starts or when spawned
@@ -27,6 +43,11 @@ void AABWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AttackDamage = FMath::RandRange(AttackDamageMax, AttackDamageMax);
+	AttackModifier = FMath::RandRange(AttackModifierMin, AttackModifierMax);
+
+	ABLOG(Warning, TEXT("Weapon Damage : %f, Modifier: %f"), AttackDamage, AttackModifier);
+
 }
 
 // Called every frame
@@ -36,3 +57,7 @@ void AABWeapon::Tick(float DeltaTime)
 
 }
 
+float AABWeapon::GetAttackRange() const
+{
+	return AttackRange;
+}

@@ -4,6 +4,8 @@
 #include "ABSection.h"
 #include "ABCharacter.h"
 #include "ABItemBox.h"
+#include "ABPlayerController.h"
+#include "ABGameMode.h"
 
 // Sets default values
 AABSection::AABSection()
@@ -65,7 +67,7 @@ AABSection::AABSection()
 		UBoxComponent* NewGateTrigger = CreateDefaultSubobject<UBoxComponent>(*GateSocket.ToString().Append(TEXT("Trigger")));
 		NewGateTrigger->SetBoxExtent(FVector(100.0f, 100.0f, 300.0f));
 		NewGateTrigger->SetupAttachment(RootComponent, GateSocket);
-		NewGateTrigger->SetRelativeLocation(FVector(70.0f, 0.0f, 250.0f));
+		NewGateTrigger->SetRelativeLocation(FVector(70.0f, 80.0f, 250.0f));
 		// 만들어준 콜리전으로 ABCharacter콜리전만 겹치는 콜리전 지정
 		NewGateTrigger->SetCollisionProfileName(TEXT("ABTrigger"));
 		GateTriggers.Add(NewGateTrigger);
@@ -154,7 +156,6 @@ void AABSection::SetState(ESectionState NewState)
 	CurrentState = NewState;
 }
 
-
 void AABSection::OperateGates(bool bOpen)
 {
 	for (UStaticMeshComponent* Gate : GateMeshes)
@@ -163,7 +164,6 @@ void AABSection::OperateGates(bool bOpen)
 		Gate->SetRelativeRotation(bOpen ? FRotator(0.0f, -90.0f, 0.0f) : FRotator::ZeroRotator);
 	}
 }
-
 
 void AABSection::OnConstruction(const FTransform& Transform)
 {
@@ -221,11 +221,28 @@ void AABSection::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, 
 
 void AABSection::OnNPCSpawn()
 {
-	GetWorld()->SpawnActor<AABCharacter>(GetActorLocation() + FVector::UpVector * 88.0f, FRotator::ZeroRotator);
-
+	GetWorld()->GetTimerManager().ClearTimer(SpawnNPCTimerHadle);
+	auto KeyNPC = GetWorld()->SpawnActor<AABCharacter>(GetActorLocation() + FVector::UpVector * 88.0f, FRotator::ZeroRotator);
+	if (nullptr != KeyNPC)
+	{
+		KeyNPC->OnDestroyed.AddDynamic(this, &AABSection::OnKeyNPCDestroyed);
+	}
 }
 
+void AABSection::OnKeyNPCDestroyed(AActor* DestroyedActor)
+{
+	auto ABCharacter = Cast<AABCharacter>(DestroyedActor);
+	ABCHECK(nullptr != ABCharacter);
 
+	auto ABPlayerController = Cast<AABPlayerController>(ABCharacter->LastHitBy);
+	ABCHECK(nullptr != ABPlayerController);
+
+	auto ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+	ABCHECK(nullptr != ABGameMode);
+	ABGameMode->AddScore(ABPlayerController);
+
+	SetState(ESectionState::COMPLETE);
+}
 
 
 

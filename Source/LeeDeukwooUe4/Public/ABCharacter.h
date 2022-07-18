@@ -17,7 +17,9 @@ public:
 	AABCharacter();
 	void SetCharacterState(ECharacterState NewState);
 	ECharacterState GetCharacter() const;
-
+	int32 GetExp() const;
+	float GetFinalAttackRange() const;
+	float GetFinalAttackDamage() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -127,7 +129,7 @@ private:
 	ECharacterState CurrentState;
 
 	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = State, Meta = (AllowPrivateAccess = true))
-		bool bIsPlayer;
+	bool bIsPlayer;
 
 	UPROPERTY()
 	class AABAIController* ABAIController;
