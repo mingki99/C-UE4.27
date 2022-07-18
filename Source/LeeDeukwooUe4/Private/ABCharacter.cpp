@@ -19,6 +19,7 @@
 #include "ABHUDWidget.h"
 #include "ABGameMode.h"
 
+#include "VisualLogger/VisualLogger.h"
 
 
 // Sets default values
@@ -567,6 +568,11 @@ void AABCharacter::AttackCheck()
 		DrawColor,
 		false,
 		DebugLifeTime);
+
+	UE_VLOG_LOCATION(this, TEXT("LeeDeukwooUe4"), Verbose, GetActorLocation(), 50.0f, FColor::Blue, TEXT("Attack Position"));
+
+	UE_VLOG_CAPSULE(this, TEXT("LeeDeukwooUe4"), Verbose, GetActorLocation() - GetActorForwardVector() * AttackRadius, HalfHeight, AttackRadius, CapsulRot, DrawColor, TEXT("Attack Area"));
+
 
 	#endif
 
